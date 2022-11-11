@@ -10,11 +10,11 @@ A Tampermonkey plugin for Yinghua Online.
 
 2. Open a web page named [ChaoJiYing](https://www.chaojiying.com/) and create a account.
 
-3. Create a software and get your software id.
+3. Create a software in user space and get your software id.
 
 4. Find a good code type for you(If you only use for Yinghua Online, you can use 1004).
 
-5. Edit the file named 'Server API.php' and fill your account,password,software id,code type to this file.
+5. Edit the file named 'Server API.php' and fill your account,password,software id,code type to this file, then you can upload it to your server.
 
 6. Edit the file named 'YinghuaAutoPlay.user.js' and fill your server address to it.
 
