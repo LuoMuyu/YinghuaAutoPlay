@@ -20,6 +20,11 @@ A Tampermonkey plugin for Yinghua Online.
 
 7. Use the JavaScript file for your Tampermonkey.
 
+### Update
+1.0: Upload Files.
+
+1.1: Add captcha detection, add complete detection, add information log, Delete and merged some code.
+
 ### License
 GPL-3.0
 
