@@ -14,8 +14,6 @@ A Tampermonkey plugin for Yinghua Online.
 
 5. Edit the file named 'YinghuaAutoPlay.user.js' and fill your account,password,software id,code type to this file.
 
-6. Use the JavaScript file for your Tampermonkey.
-
 ### Update
 1.0: Upload Files.
 
