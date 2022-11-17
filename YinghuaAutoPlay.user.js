@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         去NMD英华学堂
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.3
 // @description  英华学堂系统在线课程自动播放
 // @author       洛沐语
 // @match        *://*/user/node?*
@@ -11,59 +11,18 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_addStyle
 // @connect      upload.chaojiying.net
+// @connect      aicode.my-youth.cn
 // @require      https://cdn.staticfile.org/jquery/3.6.0/jquery.min.js
 // @license      GPL-3.0
 // ==/UserScript==
 
 (function() {
     'use strict';
-    // 注册地址https://www.chaojiying.com/user/reg/
-    // 账号&Account
-    const user = "";
-    // 密码&Password
-    const pass = "";
-    // 软件ID&Software ID
-    const softid = "941505";
-    // 验证码类型&Code Type(资源包改为8001&Resources bundle change to 8001)
-    const codetype = "1004";
     // 打码平台API地址&Server API Address
-    const api = "https://upload.chaojiying.net/Upload/Processing.php";
+    const api = "https://aicode.my-youth.cn/base64img";
 
     function log(message) {
         console.log("YinghuaAutoPlay: " + message);
-    }
-
-    function findtagbyid(tag) {
-        let site = 0;
-        let tagid = '';
-        switch(tag) {
-            case "input":
-                tagid = 'yzCode';
-                break;
-            case "img":
-                tagid = 'codeImg';
-                break;
-        }
-        for (let i=0; i<1000; i++) {
-            if (document.getElementsByTagName(tag)[i].id === tagid) {
-                site = i;
-                break;
-            }
-        }
-        return site+1;
-    }
-
-    function findcode() {
-        let site = 0;
-        for (let i=0; i<1000; i++) {
-            if (document.getElementsByTagName("div")[i].children.length > 0) {
-                if (document.getElementsByTagName("div")[i].children[0].innerHTML === "为了确认是您本人在操作，需要输入验证码。") {
-                    site = i;
-                    break;
-                }
-            }
-        }
-        return site;
     }
 
     function sleep(ms) {
@@ -86,12 +45,8 @@
             const dataURL = canvas.toDataURL("image/" + ext);
             canvas = null;
             const sendData = {
-                user: user,
-                pass: pass,
-                softid: softid,
-                codetype: codetype,
-                file_base64: dataURL.replace(/^data:image\/\w+;base64,/, "")
-            };
+                data: dataURL
+            }
             let formData = new FormData();
             for (const dataKey in sendData) {
                 formData.append(dataKey, sendData[dataKey])
@@ -100,19 +55,25 @@
                 method: "POST",
                 url: api,
                 data: formData,
+                headers: { "authorization": "Basic YWRtaW46MTc0NDQzNzMzMw==" },
                 onload: function (response) {
                     if (response.readyState === 4 && response.status === 200) {
                         const result = JSON.parse(response.responseText);
-                        log("验证码识别结果:" + result.pic_str);
-                        document.getElementsByTagName("input")[findtagbyid("input")].value = result.pic_str;
-                        document.getElementsByClassName("layui-layer-btn0")[0].click();
+                        log("验证码识别结果:" + result.data);
+                        $(".layui-layer > .layui-layer-content > .layui-layer-wrap > div:last > input:last")[0].value = result.data;
+                        $(".layui-layer-btn0")[0].click();
+                        sleep(3000).then(() => {
+                            if ($(".layui-layer-dialog > .layui-layer-content") || $("video")[0].paused) {
+                                window.location.reload();
+                            }
+                        })
                     }
                 }
             })
         }
     }
 
-    // 强制登录(来源: https://greasyfork.org/zh-CN/scripts/439148)
+    // 强制登录
     function force_login() {
         const username = $("#username").val() || "";
         const password = $("#password").val() || "";
@@ -160,32 +121,32 @@
         })
     }
 
-    // 鼠标移动防挂机(来源: https://greasyfork.org/zh-CN/scripts/406048)
+    // 鼠标移动防挂机
     function mouseMove() {
         const W = "undefined" == typeof unsafeWindow ? window : unsafeWindow
-		document.dispatchEvent(new MouseEvent("mousemove", {
-			screenX: Math.floor(Math.random() * screen.availWidth),
-			screenY: Math.floor(Math.random() * screen.availHeight),
-			clientX: Math.floor(Math.random() * W.innerWidth),
-			clientY: Math.floor(Math.random() * W.innerHeight),
-			ctrlKey: Math.random() > .8,
-			shiftKey: Math.random() > .8,
-			altKey: Math.random() > .9,
-			metaKey: !1,
-			button: 0,
-			buttons: 0,
-			relatedTarget: null,
-			region: null,
-			detail: 0,
-			view: W,
-			sourceCapabilities: W.InputDeviceCapabilities ? new W.InputDeviceCapabilities({
-				fireTouchEvents: !1
-			}) : null,
-			bubbles: !0,
-			cancelable: !0,
-			composed: !0
-		}))
-	}
+        document.dispatchEvent(new MouseEvent("mousemove", {
+            screenX: Math.floor(Math.random() * screen.availWidth),
+            screenY: Math.floor(Math.random() * screen.availHeight),
+            clientX: Math.floor(Math.random() * W.innerWidth),
+            clientY: Math.floor(Math.random() * W.innerHeight),
+            ctrlKey: Math.random() > .8,
+            shiftKey: Math.random() > .8,
+            altKey: Math.random() > .9,
+            metaKey: !1,
+            button: 0,
+            buttons: 0,
+            relatedTarget: null,
+            region: null,
+            detail: 0,
+            view: W,
+            sourceCapabilities: W.InputDeviceCapabilities ? new W.InputDeviceCapabilities({
+                fireTouchEvents: !1
+            }) : null,
+            bubbles: !0,
+            cancelable: !0,
+            composed: !0
+        }))
+    }
 
     // 页面滚动
     let repeatCount = 0;
@@ -204,58 +165,55 @@
     }
 
     window.onload = function (){
-        if (user === "" || pass === "") {
-            alert("请修改打码平台账号密码!");
-        }else {
-            if (window.location.pathname.match("/user/login") && GM_getValue("menu_force_login", true)) {
-                GM_addStyle("#code_row{display:none;}")
-                $("#login-title").text('学生登录（已开启封号强登）')
-                $("#loginForm > .list > .item:last-child").html(`<div class="inpbox">
+        if (window.location.pathname.match("/user/login") && GM_getValue("menu_force_login", true)) {
+            GM_addStyle("#code_row{display:none;}")
+            $("#login-title").text('学生登录（已开启封号强登）')
+            $("#loginForm > .list > .item:last-child").html(`<div class="inpbox">
                                 <input type="button" class="btn" id="force_login" value="强制登录"/>
                             </div>`)
-                $("#loginForm").off()
-                $("#force_login").click(force_login)
-                $("#password").keydown((e) => {
-                    if (e.keyCode === 13) {
-                        e.preventDefault();
-                        $("#force_login").click()
-                    }
-                })
-            }else if (window.location.pathname.match("/user/node")) {
-                const endid = document.getElementsByClassName("list")[0].children[document.getElementsByClassName("list")[0].children.length-1].children[0].href.match("nodeId=[0-9]{0,}")[0].replace("nodeId=", "");
-                document.getElementsByTagName("video")[0].muted = true;
-                document.getElementsByTagName("video")[0].play();
-                log("开始静音播放");
-                sleep(2000).then(() => {
-                    log("开始检测验证码弹窗");
-                    if (document.getElementsByTagName("video")[0].paused === true) {
-                        log("检测到验证码弹窗,延时等待");
-                        sleep(3000).then(() => {
-                            if (document.getElementsByTagName("div")[findcode()].style.display != "none") {
-                                log("正在识别验证码");
-                                CodeMain(document.getElementsByTagName("img")[findtagbyid("img")].src, "png");
-                            }
-                        })
+            $("#loginForm").off()
+            $("#force_login").click(force_login)
+            $("#password").keydown((e) => {
+                if (e.keyCode === 13) {
+                    e.preventDefault();
+                    $("#force_login").click()
+                }
+            })
+        }else if (window.location.pathname.match("/user/node")) {
+            const video = $("video")[0];
+            const endid = $(".detmain-navlist > .group:last > .list > .item:last > a")[0].href.match("nodeId=[0-9]{0,}")[0].replace("nodeId=", "");
+            setInterval((() => mouseMove()), 30000)
+            video.muted = true;
+            video.addEventListener("ended", function () {
+                sleep(5000).then(() => {
+                    let scrollPos = $(".on")[1].getBoundingClientRect().top - 300 - document.documentElement.scrollTop;
+                    const remainder = scrollPos % 50;
+                    ScrollSmoothly(scrollPos, (scrollPos - remainder) / 50);
+                    window.scrollBy(0, remainder);
+                    const id = Number(window.location.search.substr(1).match(new RegExp("(^|&)nodeId=([^&]*)(&|$)","i"))[2]);
+                    if (id != endid) {
+                        window.location.href = window.location.href.replace(id, id+1);
                     }else {
-                        log("未发现验证码弹窗")
+                        log("当前课程已观看完成");
                     }
                 })
-                setInterval((() => mouseMove()), 30000)
-                document.getElementsByTagName("video")[0].addEventListener("ended", function () {
-                    sleep(5000).then(() => {
-                        let scrollPos = document.getElementsByClassName('on')[1].getBoundingClientRect().top - 300 - document.documentElement.scrollTop;
-                        const remainder = scrollPos % 50;
-                        ScrollSmoothly(scrollPos, (scrollPos - remainder) / 50);
-                        window.scrollBy(0, remainder);
-                        const id = Number(window.location.search.substr(1).match(new RegExp("(^|&)nodeId=([^&]*)(&|$)","i"))[2]);
-                        if (id != endid) {
-                            window.location.href = window.location.href.replace(id, id+1);
-                        }else {
-                            log("当前课程已观看完成");
+            });
+            video.play();
+            log("开始静音播放");
+            sleep(2000).then(() => {
+                log("开始检测验证码弹窗");
+                if (video.paused === true) {
+                    log("检测到验证码弹窗,延时等待");
+                    sleep(3000).then(() => {
+                        if ($(".layui-layer > .layui-layer-content > .layui-layer-wrap > div:first")[0].style.display != "none") {
+                            log("正在识别验证码");
+                            CodeMain($(".layui-layer > .layui-layer-content > .layui-layer-wrap > div:last > img:last")[0].src, "png");
                         }
                     })
-                });
-            }
+                }else {
+                    log("未发现验证码弹窗")
+                }
+            })
         }
     }
 })();
